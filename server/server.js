@@ -19,7 +19,11 @@ app.use(cors(), bodyParser.json(), expressJwt({
 
 const typeDefs = gql(fs.readFileSync('./schema.graphql', {encoding: 'utf8'})); // encoding is for read in string content
 const resolvers = require('./resolvers');
-const apolloServer = new ApolloServer({typeDefs, resolvers});
+// CHECK USER AUTH - PASS CONTEXT
+const context = ({req}) => ({ 
+  user: req.user && db.users.get(req.user.sub)
+})
+const apolloServer = new ApolloServer({typeDefs, resolvers, context: context });
 apolloServer.applyMiddleware({app, path: '/graphql'}) //applymiddleware integrate apollo server into express app
 
 

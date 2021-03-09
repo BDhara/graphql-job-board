@@ -1,3 +1,5 @@
+import { getAccessToken, isLoggedIn } from "./auth";
+
 const ENDPOINTURL = 'http://localhost:9000/graphql'
 
 // LOAD LIST OF JOBS
@@ -37,6 +39,22 @@ export async function loadJob(id) {
      return job;
  }
 
+export async function createJob(input) {
+    const mutation = `
+        mutation CreateJob($input: CreateJobInput){
+            job: createJob(input: $input) {
+                title
+                id            
+                company {
+                    name
+                    id
+                }
+            }
+        }`
+    const {job} = await graphqlRequest(mutation, {input}); 
+     return job;
+}
+
  export async function loadCompany(id) {
     const query =`query companyQuery($id: ID!){
         company(id: $id) {
@@ -54,14 +72,19 @@ export async function loadJob(id) {
 
 // COMMON FUNCTION TO MAKE A REQUEST IN GRAPHQL
  async function graphqlRequest(query, variables={}) {
-    const response = await fetch(ENDPOINTURL, {
-         method: 'POST',
-         headers: {'content-type' : 'application/json' },
-         body: JSON.stringify({
-            query, 
-            variables           
-         })
-     })
+    const request = {
+        method: 'POST',
+        headers: {'content-type' : 'application/json' },
+        body: JSON.stringify({
+           query, 
+           variables           
+        })
+    }
+    // CHECK USER AUTH
+    if(isLoggedIn()) {
+        request.headers['authorization'] = 'Bearer ' + getAccessToken();
+    }
+    const response = await fetch(ENDPOINTURL, request)
      const responseBody = await response.json();
      // ERROR HANDLING - EXTRACT AN ERROR IF ANY
      if(responseBody.errors) { 
